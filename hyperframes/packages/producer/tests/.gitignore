@@ -1,0 +1,5 @@
+# Vault-level exclusion: rendered test outputs are throwaway artifacts.
+# This file sits deeper than hyperframes/.gitignore, so it takes precedence
+# over the upstream negations (!packages/producer/tests/*/output/).
+*/output/
+**/output/
