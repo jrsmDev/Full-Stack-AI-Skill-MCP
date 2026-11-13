@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Prebuilt native compositor binaries (build artifacts, not source)
+*.so
+*.dll
+*.dylib
+*.dll.a
+*.exe
+*.pdb
+
+# Throwaway test render outputs
+hyperframes/packages/producer/tests/**/output/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <style>
+        :root {
+            --background: 0 0% 100%;
+            --foreground: 240 10% 3.9%;
+            --card: 0 0% 100%;
+            --primary: 240 5.9% 10%;
+            --primary-foreground: 0 0% 98%;
+            --muted: 240 4.8% 86.3%;
+            --muted-foreground: 240 3.8% 46.1%;
+            --border: 240 5.9% 90%;
+            --input: 240 5.9% 90%;
+            --ring: 240 5.9% 10%;
+            --destructive: 0 84.2% 60.2%;
+            --success: 142 71% 15%;
+            --radius: 0.5rem;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+        body { background: linear-gradient(145deg, #eef2f7, #dfe6ef); min-height: 100vh; color: var(--foreground); padding: 24px 16px; line-height: 1.5; }
+        .container { background: var(--card); border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); box-shadow: var(--shadow-lg); max-width: 620px; margin: 0 auto; overflow: hidden; }
+        header { padding: 28px 28px 20px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, #ffffff, #fafafa); }
+        h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+        .subtitle { color: var(--muted-foreground); font-size: 0.875rem; margin-top: 4px; }
+        .progress-wrap { padding: 0 28px 20px; }
+        .progress-header { display: flex; justify-content: space-between; font-size: 0.8125rem; color: var(--muted-foreground); margin-bottom: 6px; }
+        .progress-track { height: 8px; background: var(--muted); border-radius: 999px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--success); border-radius: 999px; transition: width 0.3s ease; }
+        .add-section { padding: 20px 28px; }
+        .input-row { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+        input[type="text"], select, input[type="date"] { padding: 10px 14px; border: 1px solid var(--input); border-radius: var(--radius); font-size: 0.9375rem; outline: none; background: var(--background); color: var(--foreground); transition: border-color 0.15s, box-shadow 0.15s; }
+        input[type="text"]:focus, select:focus, input[type="date"]:focus { border-color: var(--ring); box-shadow: 0 0 0 2px rgb(var(--ring) / 0.15); }
+        #task-input { flex: 1; min-width: 200px; }
+        button { cursor: pointer; font-family: inherit; }
+        button#add-btn { padding: 10px 20px; background: var(--primary); color: var(--primary-foreground); border: 1px solid var(--ring); border-radius: var(--radius); font-size: 0.9375rem; font-weight: 600; transition: filter 0.15s, transform 0.1s; }
+        button#add-btn:hover { filter: brightness(0.95); }
+        button#add-btn:active { transform: scale(0.98); }
+        .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .filter-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .filter-btn { padding: 6px 14px; border: 1px solid var(--border); border-radius: 999px; font-size: 0.875rem; background: var(--background); color: var(--muted-foreground); font-weight: 500; transition: all 0.15s; }
+        .filter-btn:hover { background: var(--muted); }
+        .filter-btn.active { background: var(--primary); color: var(--primary-foreground); border-color: var(--ring); }
+        .search-box { padding: 0 28px 14px; }
+        #search-input { width: 100%; padding: 9px 14px; border: 1px solid var(--input); border-radius: var(--radius); font-size: 0.875rem; background: var(--background); color: var(--foreground); outline: none; }
+        #search-input:focus { border-color: var(--ring); box-shadow: 0 0 0 2px rgb(var(--ring) / 0.15); }
+        ul { list-style: none; padding: 8px; max-height: 46vh; overflow-y: auto; }
+        li.task-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; background: var(--background); transition: box-shadow 0.15s, border-color 0.15s; }
+        li.task-item:hover { box-shadow: var(--shadow); }
+        li.task-item.dragging { opacity: 0.4; }
+        .task-main { flex: 1; min-width: 0; }
+        .task-title { font-size: 0.9375rem; font-weight: 500; word-break: break-word; }
+        li.completed .task-title { text-decoration: line-through; color: var(--muted-foreground); }
+        .checkbox { width: 18px; height: 18px; margin-top: 3px; cursor: pointer; flex-shrink: 0; accent-color: var(--primary); }
+        .task-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+        .badge { font-size: 0.6875rem; padding: 2px 8px; border-radius: 999px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+        .badge.high { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .badge.medium { background: #fefce8; color: #854d0e; border: 1px solid #fde68a; }
+        .badge.low { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+        .due-badge { font-size: 0.75rem; color: var(--muted-foreground); display: inline-flex; align-items: center; gap: 4px; }
+        .due-badge.overdue { color: #dc2626; font-weight: 600; }
+        .subtasks-list { margin-top: 8px; padding-left: 24px; border-left: 2px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
+        .subtask-row { display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; }
+        .subtask-row .checkbox { width: 15px; height: 15px; margin: 0; }
+        .subtask-row span { flex: 1; }
+        .add-subtask-btn { margin-top: 6px; background: none; border: none; color: var(--muted-foreground); font-size: 0.75rem; padding: 0; cursor: pointer; text-decoration: underline; }
+        .add-subtask-btn:hover { color: var(--foreground); }
+        .task-actions { display: flex; gap: 4px; align-items: center; opacity: 0; transition: opacity 0.15s; }
+        li.task-item:hover .task-actions { opacity: 1; }
+        .icon-btn { background: none; border: none; color: var(--muted-foreground); font-size: 0.8125rem; line-height: 1; padding: 4px; border-radius: var(--radius); transition: background 0.15s, color 0.15s; }
+        .icon-btn:hover { background: var(--muted); }
+        .icon-btn.delete:hover { color: var(--destructive); }
+        .empty { padding: 48px 28px; text-align: center; color: var(--muted-foreground); }
+        .empty-icon { width: 44px; height: 44px; margin: 0 auto 12px; opacity: 0.4; font-size: 1.75rem; }
+        .footer { display: flex; justify-content: space-between; align-items: center; padding: 14px 28px; border-top: 1px solid var(--border); background: #fafafa; gap: 12px; flex-wrap: wrap; }
+        #count { font-size: 0.875rem; color: var(--muted-foreground); }
+        .footer-actions { display: flex; gap: 8px; }
+        button.clear { background: var(--primary); color: var(--primary-foreground); border: 1px solid var(--ring); padding: 8px 16px; border-radius: var(--radius); font-size: 0.875rem; font-weight: 600; }
+        button.clear:hover { filter: brightness(0.95); }
+        .hint { text-align: center; padding: 6px; font-size: 0.75rem; color: var(--muted-foreground); background: #fafafa; border-top: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+    <main class="container" role="main">
+        <header>
+            <h1>To-Do List</h1>
+            <p class="subtitle" id="greeting"></p>
+        </header>
+        <section class="progress-wrap" aria-live="polite">
+            <div class="progress-header"><span>Progress</span><span id="progress-text">0%</span></div>
+            <div class="progress-track" role="progressbar" aria-label="Task completion" aria-valuemin="0" aria-valuemax="100" id="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 0%"></div></div>
+        </section>
+        <section class="add-section">
+            <div class="input-row">
+                <input type="text" id="task-input" placeholder="Add a task and press Enter" aria-label="Task description" onkeypress="if(event.key==='Enter')addTask()">
+                <select id="priority-select" aria-label="Priority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select>
+                <input type="date" id="due-input" aria-label="Due date">
+                <button id="add-btn" type="button">Add</button>
+            </div>
+            <div class="filters" role="group" aria-label="Filter tasks">
+                <div class="filter-group">
+                    <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
+                    <button class="filter-btn" data-filter="active" onclick="setFilter('active', this)">Active</button>
+                    <button class="filter-btn" data-filter="completed" onclick="setFilter('completed', this)">Completed</button>
+                </div>
+                <div class="filter-group">
+                    <button class="filter-btn" data-priority="high" onclick="setPriority('high', this)">High</button>
+                    <button class="filter-btn" data-priority="medium" onclick="setPriority('medium', this)">Medium</button>
+                    <button class="filter-btn" data-priority="low" onclick="setPriority('low', this)">Low</button>
+                </div>
+            </div>
+        </section>
+        <section class="search-box">
+            <input type="text" id="search-input" placeholder="Search tasks..." aria-label="Search tasks" oninput="renderTasks()">
+        </section>
+        <ul id="task-list" aria-label="Task list"></ul>
+        <div class="empty" id="empty-state" hidden><div class="empty-icon" aria-hidden="true">tasks</div><p>No tasks here yet.</p></div>
+        <div class="hint">Tip: Drag to reorder. Double-click a task to edit. Press Enter in the search box to filter.</div>
+        <footer class="footer">
+            <span id="count">0 tasks left</span>
+            <div class="footer-actions"><button class="clear" type="button" onclick="clearCompleted()">Clear Completed</button></div>
+        </footer>
+    </main>
+    <script>
+        var tasks = JSON.parse(localStorage.getItem('todos') || '[]');
+        var currentFilter = 'all';
+        var searchQuery = '';
+        var dragEl = null;
+
+        function save() { localStorage.setItem('todos', JSON.stringify(tasks)); }
+
+        function getGreeting() {
+            var h = new Date().getHours();
+            var g = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+            document.getElementById('greeting').textContent = g + '. What will you tackle today?';
+        }
+
+        function addTask() {
+            var input = document.getElementById('task-input');
+            var text = input.value.trim();
+            if (!text) return;
+            tasks.push({ id: Date.now(), title: text, priority: document.getElementById('priority-select').value, due: document.getElementById('due-input').value, completed: false, subtasks: [] });
+            input.value = '';
+            document.getElementById('due-input').value = '';
+            save(); renderTasks(); updateProgress();
+        }
+
+        function toggleTask(id) {
+            var t = tasks.find(function(x){ return x.id === id; });
+            if (t) { t.completed = !t.completed; save(); renderTasks(); updateProgress(); }
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(function(t){ return t.id !== id; });
+            save(); renderTasks(); updateProgress();
+        }
+
+        function editTask(id, newText) {
+            var t = tasks.find(function(x){ return x.id === id; });
+            if (t && newText.trim()) { t.title = newText.trim(); save(); renderTasks(); }
+        }
+
+        function clearCompleted() {
+            tasks = tasks.filter(function(t){ return !t.completed; });
+            save(); renderTasks(); updateProgress();
+        }
+
+        function setFilter(f, btn) {
+            currentFilter = f;
+            var buttons = document.querySelectorAll('.filter-btn[data-filter]');
+            for (var i = 0; i < buttons.length; i++) buttons[i].classList.remove('active');
+            btn.classList.add('active');
+            renderTasks();
+        }
+
+        function setPriority(p, btn) {
+            var t = tasks.find(function(x){ return x.id === Number(btn.dataset.taskId); });
+            if (t) { t.priority = p; save(); renderTasks(); }
+        }
+
+        function addSubtask(id) {
+            var t = tasks.find(function(x){ return x.id === id; });
+            if (!t) return;
+            var row = document.querySelector('[data-sub-id="' + id + '"] .add-sub');
+            if (!row) return;
+            var text = row.value.trim();
+            if (!text) return;
+            t.subtasks.push({ id: Date.now(), title: text, completed: false });
+            row.value = '';
+            save(); renderTasks(); updateProgress();
+        }
+
+        function toggleSubtask(taskId, subId) {
+            var t = tasks.find(function(x){ return x.id === taskId; });
+            if (!t) return;
+            var s = t.subtasks.find(function(s){ return s.id === subId; });
+            if (s) { s.completed = !s.completed; save(); renderTasks(); updateProgress(); }
+        }
+
+        function deleteSubtask(taskId, subId) {
+            var t = tasks.find(function(x){ return x.id === taskId; });
+            if (!t) return;
+            t.subtasks = t.subtasks.filter(function(s){ return s.id !== subId; });
+            save(); renderTasks(); updateProgress();
+        }
+
+        function setSearch(q) { searchQuery = q.toLowerCase(); renderTasks(); }
+
+        function isOverdue(due) { if (!due) return false; return new Date(due + 'T23:59:59') < new Date(); }
+
+        function updateProgress() {
+            var total = tasks.length;
+            var done = tasks.filter(function(t){ return t.completed; }).length;
+            var pct = total ? Math.round((done / total) * 100) : 0;
+            document.getElementById('progress-fill').style.width = pct + '%';
+            document.getElementById('progress-text').textContent = pct + '%';
+            var bar = document.getElementById('progress-bar');
+            bar.setAttribute('aria-valuenow', String(pct));
+        }
+
+        function renderTasks() {
+            var list = document.getElementById('task-list');
+            list.innerHTML = '';
+            var filtered = tasks;
+            if (currentFilter === 'active') filtered = tasks.filter(function(t){ return !t.completed; });
+            else if (currentFilter === 'completed') filtered = tasks.filter(function(t){ return t.completed; });
+            else if (currentFilter === 'high' || currentFilter === 'medium' || currentFilter === 'low') filtered = tasks.filter(function(t){ return t.priority === currentFilter; });
+            filtered = filtered.filter(function(t){ return t.title.toLowerCase().indexOf(searchQuery) !== -1; });
+            var ordered = filtered.slice().sort(function(a, b){
+                if (currentFilter === 'high' || currentFilter === 'medium' || currentFilter === 'low') return a.priority.localeCompare(b.priority);
+                if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                if (!a.due && !b.due) return 0;
+                return (a.due || '') < (b.due || '') ? -1 : 1;
+            });
+            document.getElementById('empty-state').hidden = ordered.length !== 0;
+
+            for (var i = 0; i < ordered.length; i++) {
+                var t = ordered[i];
+                var li = document.createElement('li');
+                li.className = 'task-item' + (t.completed ? ' completed' : '');
+                li.setAttribute('draggable', 'true');
+                li.dataset.id = t.id;
+
+                var checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'checkbox';
+                checkbox.checked = t.completed;
+                checkbox.tabIndex = 0;
+                checkbox.onchange = function(){ toggleTask(t.id); };
+                checkbox.setAttribute('aria-label', 'Mark task complete');
+
+                var main = document.createElement('div');
+                main.className = 'task-main';
+                var title = document.createElement('span');
+                title.className = 'task-title';
+                title.textContent = t.title;
+                title.ondblclick = function(){ var v = prompt('Edit task:', t.title); if (v !== null) editTask(t.id, v); };
+
+                var meta = document.createElement('div');
+                meta.className = 'task-meta';
+                if (t.priority !== 'medium') {
+                    var badge = document.createElement('span');
+                    badge.className = 'badge ' + t.priority;
+                    badge.textContent = t.priority;
+                    meta.appendChild(badge);
+                }
+                if (t.due) {
+                    var due = document.createElement('span');
+                    due.className = 'due-badge' + (isOverdue(t.due) ? ' overdue' : '');
+                    due.textContent = isOverdue(t.due) ? 'Overdue' : 'Due ' + new Date(t.due).toLocaleDateString();
+                    meta.appendChild(due);
+                }
+
+                if (t.subtasks && t.subtasks.length > 0) {
+                    var subList = document.createElement('div');
+                    subList.className = 'subtasks-list';
+                    for (var j = 0; j < t.subtasks.length; j++) {
+                        var s = t.subtasks[j];
+                        var row = document.createElement('label');
+                        row.className = 'subtask-row';
+                        var sc = document.createElement('input');
+                        sc.type = 'checkbox';
+                        sc.className = 'checkbox';
+                        sc.checked = s.completed;
+                        sc.onchange = function(){ toggleSubtask(t.id, s.id); };
+                        var span = document.createElement('span');
+                        span.textContent = s.title;
+                        row.appendChild(sc);
+                        row.appendChild(span);
+                        subList.appendChild(row);
+                    }
+                    meta.appendChild(subList);
+                }
+
+                main.appendChild(title);
+                li.appendChild(checkbox);
+                li.appendChild(main);
+                li.appendChild(meta);
+
+                var actions = document.createElement('div');
+                actions.className = 'task-actions';
+                var editBtn = document.createElement('button');
+                editBtn.type = 'button';
+                editBtn.className = 'icon-btn';
+                editBtn.textContent = 'Edit';
+                editBtn.title = 'Edit task';
+                editBtn.onclick = function(){ var v = prompt('Edit task:', t.title); if (v !== null) editTask(t.id, v); };
+                var delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'icon-btn delete';
+                delBtn.textContent = 'Delete';
+                delBtn.title = 'Delete task';
+                delBtn.onclick = function(){ if (confirm('Delete this task?')) deleteTask(t.id); };
+                actions.appendChild(editBtn);
+                actions.appendChild(delBtn);
+                li.appendChild(actions);
+
+                li.addEventListener('dragstart', function(e){ dragEl = li; li.classList.add('dragging'); });
+                li.addEventListener('dragend', function(){ dragEl = null; save(); });
+                li.addEventListener('dragover', function(e){ if (dragEl && e.target === li) e.preventDefault(); });
+                li.addEventListener('drop', function(e){ if (dragEl && e.target === li) { tasks = reorderArray(tasks, Number(dragEl.dataset.id), Number(li.dataset.id)); save(); renderTasks(); } });
+
+                list.appendChild(li);
+            }
+
+            var remaining = tasks.filter(function(t){ return !t.completed; }).length;
+            document.getElementById('count').textContent = remaining + ' task' + (remaining === 1 ? '' : 's') + ' left';
+        }
+
+        function reorderArray(arr, from, to) {
+            if (to === from) return arr;
+            var result = arr.slice();
+            var item = result.splice(from, 1)[0];
+            result.splice(to, 0, item);
+            return result;
+        }
+
+        getGreeting();
+        renderTasks();
+        updateProgress();
+    </script>
+</body>
+</html>
